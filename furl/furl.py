@@ -398,13 +398,16 @@ class Path(object):
 
         self.load(path)
 
-    def load(self, path):
+    def load(self, path, raw_path=False):
         """
         Load <path>, replacing any existing path. <path> can either be a
         list of segments or a path string to adopt.
 
         Returns: <self>.
         """
+
+        self.raw_path = raw_path
+
         if not path:
             segments = []
         elif callable_attr(path, 'split'):  # String interface.
@@ -421,7 +424,6 @@ class Path(object):
             segments.pop(0)
 
         self.segments = segments
-
         return self
 
     def add(self, path):
@@ -551,6 +553,9 @@ class Path(object):
         string and self.strict is True.
         """
         segments = []
+        if self.raw_path:
+            return path.split('/')
+
         for segment in path.split('/'):
             if not is_valid_encoded_path_segment(segment):
                 segment = quote(utf8(segment))
@@ -580,6 +585,8 @@ class Path(object):
 
         Returns: A path string with quoted path segments.
         """
+        if self.raw_path:
+            return '/'.join(segments)
         segments = [
             quote(utf8(attemptstr(segment)), self.SAFE_SEGMENT_CHARS)
             for segment in segments]
@@ -1177,7 +1184,7 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface,
       fragment: Fragment object from FragmentCompositionInterface.
     """
 
-    def __init__(self, url='', strict=False):
+    def __init__(self, url='', strict=False, raw_path=False):
         """
         Raises: ValueError on invalid url.
         """
@@ -1185,6 +1192,8 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface,
         QueryCompositionInterface.__init__(self, strict=strict)
         FragmentCompositionInterface.__init__(self, strict=strict)
         self.strict = strict
+
+        self.raw_path = raw_path
 
         self.load(url)  # Raises ValueError on invalid url.
 
@@ -1212,7 +1221,7 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface,
         self.scheme = tokens.scheme
         if not self.port:
             self._port = DEFAULT_PORTS.get(self.scheme)
-        self.path.load(tokens.path)
+        self.path.load(tokens.path, self.raw_path)
         self.query.load(tokens.query)
         self.fragment.load(tokens.fragment)
         return self

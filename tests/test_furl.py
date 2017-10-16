@@ -324,6 +324,12 @@ class TestPath(unittest.TestCase):
         assert f.fragment.path.isabsolute
         assert str(f.fragment.path) == '/mrp/sup'
 
+        f = furl.furl('http://website.com/raw%2525')
+        assert f.path == '/raw%2525'
+        f = furl.furl('http://website.com/¨˜ˆø∂´', raw_path=True)
+        assert f.path == '/¨˜ˆø∂´'
+
+
     def test_remove(self):
         # Remove lists of path segments.
         p = furl.Path('a/b/s%20s/')
